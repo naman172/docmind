@@ -1,0 +1,6 @@
+[project]
+name = "docmind-evals"
+version = "0.1.0"
+description = "Project evals"
+requires-python = ">=3.12"
+dependencies = []

@@ -1,0 +1,11 @@
+[project]
+name = "docmind-api"
+version = "0.1.0"
+description = "FastAPI service"
+requires-python = ">=3.12"
+dependencies = [
+    "docmind-core",
+]
+
+[tool.uv.sources]
+docmind-core = { workspace = true }

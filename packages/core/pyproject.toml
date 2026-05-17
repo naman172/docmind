@@ -1,0 +1,6 @@
+[project]
+name = "docmind-core"
+version = "0.1.0"
+description = "Shared models, LLM client, and retriever logic"
+requires-python = ">=3.12"
+dependencies = []

@@ -1,10 +1,18 @@
 [project]
 name = "docmind"
 version = "0.1.0"
-description = "Add your description here"
+description = "Multi-tenant RAG-as-a-service platform"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = []
+
+[tool.uv.workspace]
+members = [
+    "apps/api",
+    "apps/worker",
+    "packages/core",
+    "packages/evals",
+]
 
 [dependency-groups]
 dev = [
@@ -12,3 +20,15 @@ dev = [
     "pre-commit>=4.6.0",
     "ruff>=0.15.13",
 ]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
