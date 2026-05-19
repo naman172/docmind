@@ -1,6 +1,10 @@
-def main() -> None:
-    print("Hello from docmind!")
+from collections.abc import Mapping
+
+from fastapi import FastAPI
+
+app = FastAPI()
 
 
-if __name__ == "__main__":
-    main()
+@app.get("/health")
+async def health() -> Mapping[str, str]:
+    return {"status": "ok"}

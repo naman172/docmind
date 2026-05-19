@@ -1,8 +1,9 @@
 import uuid
 from datetime import UTC, datetime
 
-from enums import DocumentStatus, Role
 from pydantic import BaseModel, Field, PositiveInt, model_validator
+
+from packages.core.enums import DocumentStatus, Role
 
 
 class Tenant(BaseModel):
@@ -23,7 +24,7 @@ class Document(BaseModel):
 
 class Chunk(BaseModel):
     id: str
-    document_id: str
+    document_id: uuid.UUID
     text: str
     chunk_index: int
 
@@ -53,12 +54,12 @@ class ChatResponse(BaseModel):
 
 class IngestionRequest(BaseModel):
     tenant_id: str
-    document_id: str
+    document_id: uuid.UUID
     s3_key: str
 
 
 class IngestionStatus(BaseModel):
-    document_id: str
+    document_id: uuid.UUID
     status: DocumentStatus
     chunks_created: int
     error: str | None = None
@@ -67,7 +68,7 @@ class IngestionStatus(BaseModel):
 class QueryResult(BaseModel):
     chunk: Chunk
     score: float
-    document_id: str
+    document_id: uuid.UUID
 
 
 class ErrorResponse(BaseModel):
