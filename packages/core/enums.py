@@ -9,6 +9,6 @@ class DocumentStatus(StrEnum):
 
 
 class Role(StrEnum):
-    user = "USER"
-    assistant = "ASSISTANT"
-    system = "SYSTEM"
+    USER = "user"
+    ASSISSTANT = "assisstant"
+    SYSTEM = "system"
