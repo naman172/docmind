@@ -6,6 +6,11 @@
 
 ---
 
+## Current State
+A FastAPI server with a /health endpoint and a /chat endpoint that streams responses from a local Ollama model.
+
+---
+
 ## What it is
 
 docmind is a production-grade, multi-tenant platform that lets teams upload their own document corpora and query them through a streaming chat interface backed by a retrieval-augmented generation pipeline.
