@@ -33,3 +33,7 @@ python_version = "3.12"
 strict = true
 ignore_missing_imports = true
 disable_error_code = ["misc"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["apps/api/tests", "packages/core/tests"]
