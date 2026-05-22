@@ -1,15 +1,15 @@
-from collections.abc import AsyncGenerator, Mapping
+from collections.abc import AsyncGenerator
 
 import litellm
 from docmind_core.models import ChatRequest
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, Response
+from fastapi.responses import JSONResponse, StreamingResponse
 
 app = FastAPI()
 
 
 @app.get("/health")
-async def health() -> Mapping[str, str]:
+async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
@@ -28,8 +28,9 @@ async def stream_chat(request: ChatRequest) -> AsyncGenerator[str, None]:
             yield content
 
 
+# returns StreamingResponse or JSONResponse depending on request.stream
 @app.post("/chat", response_model=None)
-async def chat(request: ChatRequest) -> Mapping[str, str] | StreamingResponse:
+async def chat(request: ChatRequest) -> Response:
     if request.stream:
         return StreamingResponse(stream_chat(request), media_type="text/event-stream")
 
@@ -41,4 +42,4 @@ async def chat(request: ChatRequest) -> Mapping[str, str] | StreamingResponse:
     )
 
     content = response.choices[0].message.content
-    return {"response": content}
+    return JSONResponse({"response": content})
