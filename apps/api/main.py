@@ -1,10 +1,9 @@
 from collections.abc import AsyncGenerator, Mapping
 
 import litellm
+from docmind_core.models import ChatRequest
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
-
-from packages.core.models import ChatRequest
 
 app = FastAPI()
 

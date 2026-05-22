@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, PositiveInt, model_validator
 
-from packages.core.enums import DocumentStatus, Role
+from docmind_core.enums import DocumentStatus, Role
 
 
 class Tenant(BaseModel):
@@ -42,7 +42,7 @@ class ChatRequest(BaseModel):
     @model_validator(mode="after")
     def validate_messages(self) -> "ChatRequest":
         if not self.messages:
-            raise ValueError("Messages can't be empty. Atleast 1 message is required.")
+            raise ValueError("Messages can't be empty. At least 1 message is required.")
         return self
 
 
