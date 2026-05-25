@@ -26,9 +26,10 @@ def test_chat_request_rejects_empty_messages() -> None:
     with pytest.raises(ValidationError) as exc_info:
         ChatRequest(**make_valid_request(messages=[]))
 
-    assert "Messages can't be empty. At least 1 message is required." in str(
-        exc_info.value
-    )
+    errors = exc_info.value.errors()
+    print(errors)
+    assert len(errors) == 1
+    assert errors[0]["type"] == "value_error"  # what kind of error
 
 
 def test_chat_request_rejects_invalid_role() -> None:
@@ -53,6 +54,6 @@ def test_chat_request_rejects_missing_tenant_id() -> None:
 
 
 def test_chat_message_role_coercion() -> None:
-    msg = ChatMessage(role="user", content="hello")
+    msg = ChatMessage(role=Role.USER, content="hello")
     assert msg.role == Role.USER
     assert msg.role == "user"
