@@ -18,6 +18,8 @@ jobs:
         run: uv sync --all-packages
       - name: Lint
         run: uv run ruff check .
+      - name: Format
+        run: uv run ruff format --check .
       - name: Typecheck
         run: uv run mypy .
       - name: Test
