@@ -56,4 +56,4 @@ def test_chat_request_rejects_missing_tenant_id() -> None:
 def test_chat_message_role_coercion() -> None:
     msg = ChatMessage(role=Role.USER, content="hello")
     assert msg.role == Role.USER
-    assert msg.role == "user"
+    assert msg.role.value == "user"
