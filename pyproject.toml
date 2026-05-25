@@ -6,6 +6,9 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
 
+[tool.uv]
+package = false
+
 [tool.uv.workspace]
 members = [
     "apps/api",
@@ -36,4 +39,9 @@ disable_error_code = ["misc"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["apps/api/tests", "packages/core/tests"]
+testpaths = [
+    "apps/api/tests",
+    "apps/worker/tests",
+    "packages/core/tests",
+    "packages/evals/tests",
+]

@@ -354,7 +354,7 @@ dev = [
 [[package]]
 name = "docmind-api"
 version = "0.1.0"
-source = { virtual = "apps/api" }
+source = { editable = "apps/api" }
 dependencies = [
     { name = "docmind-core" },
     { name = "fastapi" },
@@ -406,12 +406,12 @@ dev = [{ name = "pytest", specifier = ">=9.0.3" }]
 [[package]]
 name = "docmind-evals"
 version = "0.1.0"
-source = { virtual = "packages/evals" }
+source = { editable = "packages/evals" }
 
 [[package]]
 name = "docmind-worker"
 version = "0.1.0"
-source = { virtual = "apps/worker" }
+source = { editable = "apps/worker" }
 dependencies = [
     { name = "docmind-core" },
 ]
