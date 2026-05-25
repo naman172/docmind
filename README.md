@@ -4,6 +4,8 @@
 
 **[Live Demo](https://docmind.yourdomain.com)** · **[Architecture](docs/architecture.md)** · **[5-min Loom walkthrough](#demo)**
 
+![CI](https://github.com/naman172/docmind/actions/workflows/ci.yml/badge.svg)
+
 ---
 
 ## Current State
