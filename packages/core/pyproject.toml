@@ -5,6 +5,7 @@ description = "Shared models, LLM client, and retriever logic"
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.13.4",
+    "tiktoken>=0.13.0",
 ]
 
 [build-system]

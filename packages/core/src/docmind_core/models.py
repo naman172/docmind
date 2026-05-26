@@ -23,10 +23,11 @@ class Document(BaseModel):
 
 
 class Chunk(BaseModel):
-    id: str
+    id: uuid.UUID = Field(default_factory=uuid.uuid4)
     document_id: uuid.UUID
     text: str
     chunk_index: int
+    token_count: int
 
 
 class ChatMessage(BaseModel):
