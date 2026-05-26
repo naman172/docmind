@@ -15,7 +15,7 @@ def chunk_by_tokens(
     chunk_index_start: int = 0,
 ) -> list[Chunk]:
     encoded_string = _ENCODER.encode(text)
-    chunks = []
+    chunks: list[Chunk] = []
 
     if overlap >= chunk_size:
         raise ValueError(
@@ -23,17 +23,16 @@ def chunk_by_tokens(
         )
 
     for i in range(0, len(encoded_string), chunk_size - overlap):
-        chunks.append(encoded_string[i : i + chunk_size])
-
-    chunks[:] = [
-        Chunk(
-            document_id=document_id,
-            text=_ENCODER.decode(x),
-            chunk_index=chunk_index_start + i,
-            token_count=len(x),
+        string_partition = encoded_string[i : i + chunk_size]
+        decoded_string = _ENCODER.decode(string_partition)
+        chunks.append(
+            Chunk(
+                document_id=document_id,
+                text=decoded_string,
+                chunk_index=chunk_index_start + len(chunks),
+                token_count=len(string_partition),
+            )
         )
-        for i, x in enumerate(chunks)
-    ]
 
     return chunks
 
