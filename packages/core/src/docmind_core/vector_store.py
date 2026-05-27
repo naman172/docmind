@@ -1,4 +1,5 @@
 import os
+import uuid
 
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient, models
@@ -53,18 +54,25 @@ async def search(
         with_payload=True,
     )
 
-    response: list[QueryResult] = [
-        QueryResult(
-            score=point.score,
-            chunk=Chunk(
-                id=point.id,
-                text=point.payload["text"],
-                document_id=point.payload["document_id"],
-                chunk_index=point.payload["chunk_index"],
-                token_count=point.payload["token_count"],
-            ),
+    response: list[QueryResult] = []
+
+    for point in api_response.points:
+        payload = point.payload
+
+        if payload is None:
+            continue
+
+        response.append(
+            QueryResult(
+                score=point.score,
+                chunk=Chunk(
+                    id=uuid.UUID(str(point.id)),
+                    text=payload["text"],
+                    document_id=payload["document_id"],
+                    chunk_index=payload["chunk_index"],
+                    token_count=payload["token_count"],
+                ),
+            )
         )
-        for point in api_response.points
-    ]
 
     return response
