@@ -1,4 +1,4 @@
-RAG_SYSTEM_PROMPT_V1 = """
+RAG_SYSTEM_PROMPT_V1: str = """
 You are a helpful AI assistant.
 
 Answer the user's query using ONLY the provided context.

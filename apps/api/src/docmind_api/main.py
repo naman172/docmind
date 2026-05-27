@@ -54,7 +54,7 @@ async def chat(request: ChatRequest) -> Response:
 
     query = request.messages[-1]
     prompt = await build_llm_prompt(request)
-    print(prompt)
+
     response = await litellm.acompletion(
         model="ollama/llama3.2",
         messages=[

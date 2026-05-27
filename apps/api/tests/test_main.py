@@ -9,6 +9,7 @@ from httpx import ASGITransport, AsyncClient
 
 def make_chat_payload(**overrides: Any) -> dict[str, Any]:
     base = {
+        "collection_name": "test",
         "tenant_id": "tenant-123",
         "messages": [{"role": "user", "content": "hello"}],
         "stream": False,

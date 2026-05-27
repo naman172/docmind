@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 def make_valid_request(**overrides: Any) -> dict[str, Any]:
     base = {
+        "collection_name": "test",
         "tenant_id": "tenant-123",
         "messages": [{"role": "user", "content": "hello"}],
         "stream": False,
