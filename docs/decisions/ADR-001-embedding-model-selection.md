@@ -30,4 +30,4 @@ Note: For the purpose of development we'll be using the free embedding model fro
 Switching embedding models mid-project requires the following considerations:
 - Vectors in Qdrant are tied to the embedding model that produced them
 - Changing models requires full collection rebuild and re-ingestion
-- Collection metadata will store the embedding model name at creation time. The ingestion worker will assert model name matches before writing vectors to prevent silent mixed-vector corruption.
+- The embedding model validation will be enforced at the application layer via a Postgres collections metadata table, not at the Qdrant level.

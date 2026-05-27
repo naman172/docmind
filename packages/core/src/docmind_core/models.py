@@ -69,7 +69,6 @@ class IngestionStatus(BaseModel):
 class QueryResult(BaseModel):
     chunk: Chunk
     score: float
-    document_id: uuid.UUID
 
 
 class ErrorResponse(BaseModel):
