@@ -9,10 +9,16 @@ from docmind_core.models import Chunk, QueryResult
 load_dotenv()
 
 QDRANT_BASE_URL = os.environ.get("QDRANT_BASE_URL", "http://localhost:6333")
+MODEL_VECTOR_DIMENSION = int(os.environ.get("MODEL_VECTOR_DIMENSION", 768))
 client = QdrantClient(url=QDRANT_BASE_URL)
 
 
-async def create_collection(collection_name: str, vector_size: int) -> None:
+async def create_collection(
+    collection_name: str, vector_size: int = MODEL_VECTOR_DIMENSION
+) -> None:
+    if client.collection_exists(collection_name=collection_name):
+        return
+
     client.create_collection(
         collection_name=collection_name,
         vectors_config=models.VectorParams(

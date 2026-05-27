@@ -9,8 +9,7 @@
 ---
 
 ## Current State
-A FastAPI server with a /health endpoint and a /chat endpoint that streams responses from a local Ollama model.
-
+Synchronous RAG pipeline: POST /ingest chunks and embeds text into Qdrant, /chat retrieves relevant context and generates answers via Ollama.
 ---
 
 ## What it is
