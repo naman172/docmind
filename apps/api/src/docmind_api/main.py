@@ -43,7 +43,7 @@ async def stream_chat(request: ChatRequest) -> AsyncGenerator[str, None]:
     async for chunk in response:
         content = chunk.choices[0].delta.content
         if content:
-            yield content
+            yield f"data: {content}\n\n"
 
 
 # returns StreamingResponse or JSONResponse depending on request.stream

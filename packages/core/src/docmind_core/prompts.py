@@ -11,4 +11,4 @@ Context:
 
 def build_rag_prompt(context_chunks: list[str]) -> str:
     context = "\n\n---\n\n".join(context_chunks)
-    return RAG_SYSTEM_PROMPT_V1.format(context=context)
+    return str(RAG_SYSTEM_PROMPT_V1.format(context=context))

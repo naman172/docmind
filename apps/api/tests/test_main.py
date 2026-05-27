@@ -37,8 +37,18 @@ async def test_chat_non_streaming(async_client: AsyncClient) -> None:
     mock_response = MagicMock()
     mock_response.choices[0].message.content = "hello back"
 
-    with patch("docmind_api.main.litellm.acompletion", new_callable=AsyncMock) as mock:
-        mock.return_value = mock_response
+    with (
+        patch(
+            "docmind_api.main.build_llm_prompt",
+            new_callable=AsyncMock,
+            return_value="mock prompt",
+        ),
+        patch(
+            "docmind_api.main.litellm.acompletion",
+            new_callable=AsyncMock,
+            return_value=mock_response,
+        ),
+    ):
         async with async_client as ac:
             request = make_chat_payload()
             response = await ac.post("/chat", json=request)
@@ -53,9 +63,25 @@ async def fake_stream(*args: Any, **kwargs: Any) -> AsyncGenerator[MagicMock, No
     yield chunk
 
 
+async def mock_acompletion(
+    *args: Any, **kwargs: Any
+) -> AsyncGenerator[MagicMock, None]:
+    return fake_stream()
+
+
 @pytest.mark.asyncio
 async def test_chat_streaming(async_client: AsyncClient) -> None:
-    with patch("docmind_api.main.litellm.acompletion", side_effect=fake_stream):
+    with (
+        patch(
+            "docmind_api.main.build_llm_prompt",
+            new_callable=AsyncMock,
+            return_value="mock prompt",
+        ),
+        patch(
+            "docmind_api.main.litellm.acompletion",
+            new=AsyncMock(side_effect=mock_acompletion),
+        ),
+    ):
         async with async_client as ac:
             request = make_chat_payload(stream=True)
             response = await ac.post("/chat", json=request)
