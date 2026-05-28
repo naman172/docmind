@@ -1,4 +1,4 @@
-# Week 3 Observations
+# Observations
 
 ## Retrieval quality
 - First end-to-end test: query "what is FastAPI?" against a 3-sentence corpus

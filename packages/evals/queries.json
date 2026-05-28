@@ -1,0 +1,122 @@
+[
+  {
+    "question": "What syntax should you use for path operation functions when using libraries that require await?",
+    "expected_answer": "Declare path operation functions with async def.",
+    "grounding_truth": "Then, declare your *path operation functions* with `async def` like:",
+    "source_file": "async.md"
+  },
+  {
+    "question": "Where can await be used in FastAPI functions?",
+    "expected_answer": "You can only use await inside functions created with async def.",
+    "grounding_truth": "You can only use `await` inside of functions created with `async def`.",
+    "source_file": "async.md"
+  },
+  {
+    "question": "How are query parameters interpreted in FastAPI?",
+    "expected_answer": "Function parameters that are not path parameters are interpreted as query parameters.",
+    "grounding_truth": "When you declare other function parameters that are not part of the path parameters, they are automatically interpreted as \"query\" parameters.",
+    "source_file": "tutorial/query-params.md"
+  },
+  {
+    "question": "What does FastAPI use to declare request bodies?",
+    "expected_answer": "Pydantic models are used to declare request bodies.",
+    "grounding_truth": "To declare a **request** body, you use [Pydantic](https://docs.pydantic.dev/) models with all their power and benefits.",
+    "source_file": "tutorial/body.md"
+  },
+  {
+    "question": "What does FastAPI provide from Python type declarations for request bodies?",
+    "expected_answer": "Automatic request parsing and validation.",
+    "grounding_truth": "With just that Python type declaration, **FastAPI** will:",
+    "source_file": "tutorial/body.md"
+  },
+  {
+    "question": "What kind of functions can background task functions be in FastAPI?",
+    "expected_answer": "They can be async def or normal def functions.",
+    "grounding_truth": "It can be an `async def` or normal `def` function, **FastAPI** will know how to handle it correctly.",
+    "source_file": "tutorial/background-tasks.md"
+  },
+  {
+    "question": "How does BackgroundTasks integrate with FastAPI dependencies?",
+    "expected_answer": "It works with the dependency injection system.",
+    "grounding_truth": "Using `BackgroundTasks` also works with the dependency injection system",
+    "source_file": "tutorial/background-tasks.md"
+  },
+  {
+    "question": "What does StreamingResponse accept in FastAPI?",
+    "expected_answer": "It accepts an async generator or a normal generator/iterator.",
+    "grounding_truth": "Takes an async generator or a normal generator/iterator (a function with `yield`) and streams the response body.",
+    "source_file": "advanced/custom-response.md"
+  },
+  {
+    "question": "How do you configure CORS in FastAPI?",
+    "expected_answer": "Using the CORSMiddleware.",
+    "grounding_truth": "You can configure it in your **FastAPI** application using the `CORSMiddleware`.",
+    "source_file": "tutorial/cors.md"
+  },
+  {
+    "question": "What does UploadFile expose internally?",
+    "expected_answer": "It exposes a SpooledTemporaryFile object.",
+    "grounding_truth": "It exposes an actual Python [`SpooledTemporaryFile`](https://docs.python.org/3/library/tempfile.html#tempfile.SpooledTemporaryFile) object",
+    "source_file": "tutorial/request-files.md"
+  },
+  {
+    "question": "What happens to uploaded files after exceeding the memory size limit?",
+    "expected_answer": "They are stored on disk.",
+    "grounding_truth": "A file stored in memory up to a maximum size limit, and after passing this limit it will be stored in disk.",
+    "source_file": "tutorial/request-files.md"
+  },
+  {
+    "question": "How does the FastAPI documentation describe APIRouter?",
+    "expected_answer": "It is described as a mini FastAPI class.",
+    "grounding_truth": "You can think of `APIRouter` as a \"mini `FastAPI`\" class.",
+    "source_file": "tutorial/bigger-applications.md"
+  },
+  {
+    "question": "What should be used to return HTTP error responses in FastAPI?",
+    "expected_answer": "HTTPException should be used.",
+    "grounding_truth": "To return HTTP responses with errors to the client you use `HTTPException`.",
+    "source_file": "tutorial/handling-errors.md"
+  },
+  {
+    "question": "What does FastAPI use the response return type for?",
+    "expected_answer": "It uses it to validate the returned data.",
+    "grounding_truth": "FastAPI will use this return type to:",
+    "source_file": "tutorial/response-model.md"
+  },
+  {
+    "question": "What schema standard does FastAPI use for APIs?",
+    "expected_answer": "It uses the OpenAPI standard.",
+    "grounding_truth": "**FastAPI** generates a \"schema\" with all your API using the **OpenAPI** standard for defining APIs.",
+    "source_file": "tutorial/first-steps.md"
+  },
+  {
+    "question": "What is middleware in FastAPI?",
+    "expected_answer": "It is a function that works with every request before path operations.",
+    "grounding_truth": "A \"middleware\" is a function that works with every **request** before it is processed by any specific *path operation*.",
+    "source_file": "tutorial/middleware.md"
+  },
+  {
+    "question": "What is TestClient based on?",
+    "expected_answer": "It is based on HTTPX.",
+    "grounding_truth": "It is based on [HTTPX](https://www.python-httpx.org), which in turn is designed based on Requests, so it's very familiar and intuitive.",
+    "source_file": "tutorial/testing.md"
+  },
+  {
+    "question": "How are path parameter types declared in FastAPI?",
+    "expected_answer": "Using standard Python type annotations.",
+    "grounding_truth": "You can declare the type of a path parameter in the function, using standard Python type annotations:",
+    "source_file": "tutorial/path-params.md"
+  },
+  {
+    "question": "What interactive documentation system does FastAPI integrate?",
+    "expected_answer": "Swagger UI.",
+    "grounding_truth": "automatic, interactive documentation (integrating Swagger UI).",
+    "source_file": "tutorial/path-params.md"
+  },
+  {
+    "question": "What editor support improvements are mentioned for Pydantic models when using Pycharm?",
+    "expected_answer": "Auto-completion, type checks, refactoring, searching, and inspections.",
+    "grounding_truth": "It improves editor support for Pydantic models, with:",
+    "source_file": "tutorial/body.md"
+  }
+]
