@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 async def embed_texts(
     texts: list[str], model: str = "nomic-embed-text"
 ) -> list[list[float]]:
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=120.0) as client:
         try:
             start_time = time.perf_counter()
 

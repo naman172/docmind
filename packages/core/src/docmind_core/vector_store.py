@@ -42,6 +42,7 @@ async def upsert_chunks(
                     "document_id": str(chunk.document_id),
                     "chunk_index": chunk.chunk_index,
                     "token_count": chunk.token_count,
+                    "source_file": chunk.source_file,
                 },
                 vector=embedding,
             )
@@ -77,6 +78,7 @@ async def search(
                     document_id=payload["document_id"],
                     chunk_index=payload["chunk_index"],
                     token_count=payload["token_count"],
+                    source_file=payload.get("source_file"),
                 ),
             )
         )
