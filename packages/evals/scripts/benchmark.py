@@ -8,7 +8,7 @@ from docmind_core.chunking import chunk_fixed, chunk_recursive
 from docmind_core.embeddings import embed_texts
 from docmind_core.models import Chunk
 from docmind_core.vector_store import create_collection, search, upsert_chunks
-from tabulate import tabulate  # type: ignore[import-untyped]
+from tabulate import tabulate  # type: ignore[import-untyped,unused-ignore]
 
 
 def load_corpus(corpus_dir: Path) -> list[tuple[str, str]]:
