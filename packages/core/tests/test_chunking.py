@@ -1,8 +1,9 @@
 import uuid
+from pathlib import Path
 
 import pytest
 import tiktoken
-from docmind_core.chunking import chunk_by_paragraph, chunk_by_tokens
+from docmind_core.chunking import chunk_by_paragraph, chunk_by_tokens, chunk_markdown
 
 _ENCODER = tiktoken.get_encoding("cl100k_base")
 
@@ -75,3 +76,16 @@ def test_mixed_paragraphs_for_chunk_by_paragraph() -> None:
     assert len(paragraph_chunks) > 3
     for index, chunk in enumerate(paragraph_chunks):
         assert chunk.chunk_index == index
+
+
+def test_validity_for_chunk_markdown() -> None:
+    corpus_path = Path(__file__).parent.parent.parent / "evals/corpus"
+    async_md = next(corpus_path.rglob("async.md"))
+    text = async_md.read_text()
+
+    grounding_truth = (
+        "You can only use `await` inside of functions created with `async def`."
+    )
+
+    chunks = chunk_markdown(text, uuid.uuid4(), "test")
+    assert any(grounding_truth in chunk.text for chunk in chunks)

@@ -1,6 +1,7 @@
 import uuid
 
 import tiktoken
+from markdown_it import MarkdownIt
 
 from docmind_core.models import Chunk
 
@@ -163,3 +164,56 @@ def chunk_semantic(
     large corpora.
     """
     raise NotImplementedError("chunk_semantic requires embedding client")
+
+
+def chunk_markdown(
+    text: str,
+    document_id: uuid.UUID,
+    source_file: str,
+    chunk_size: int = 512,
+    overlap: int = 50,
+) -> list[Chunk]:
+    md = MarkdownIt()
+    tokens = md.parse(text)
+
+    chunks: list[Chunk] = []
+
+    idx = 0
+    content: list[str] = []
+
+    def _flush(content: list[str]) -> None:
+        nonlocal idx
+        if not content:
+            return
+        joined = "\n\n".join(content)
+        if len(joined) <= chunk_size:
+            chunks.append(
+                Chunk(
+                    document_id=document_id,
+                    source_file=source_file,
+                    text=joined,
+                    chunk_index=idx,
+                )
+            )
+            idx += 1
+        else:
+            for chunk in chunk_fixed(
+                joined, document_id, source_file, chunk_size, overlap
+            ):
+                chunks.append(chunk.model_copy(update={"chunk_index": idx}))
+                idx += 1
+
+    for token in tokens:
+        if token.type == "heading_open":
+            _flush(content)
+            content = []
+
+        elif token.type == "inline" and token.content.strip():
+            content.append(token.content)
+
+        elif token.type == "fence" or token.type == "code_block":
+            content.append(f"```{token.info}\n{token.content}\n```")
+
+    _flush(content)
+
+    return chunks
