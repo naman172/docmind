@@ -1,5 +1,4 @@
 import uuid
-from pathlib import Path
 
 import pytest
 import tiktoken
@@ -79,9 +78,38 @@ def test_mixed_paragraphs_for_chunk_by_paragraph() -> None:
 
 
 def test_validity_for_chunk_markdown() -> None:
-    corpus_path = Path(__file__).parent.parent.parent / "evals/corpus"
-    async_md = next(corpus_path.rglob("async.md"))
-    text = async_md.read_text()
+    text = """
+    # Concurrency and async / await { #concurrency-and-async-await }
+
+    Details about the `async def` syntax for *path operation functions* and some
+    background about asynchronous code, concurrency, and parallelism.
+
+    ## In a hurry? { #in-a-hurry }
+
+    <abbr title="too long; didn't read"><strong>TL;DR:</strong></abbr>
+
+    If you are using third party libraries that tell you to call them with `await`,
+    like:
+
+    ```Python
+    results = await some_library()
+    ```
+
+    Then, declare your *path operation functions* with `async def` like:
+
+    ```Python hl_lines="2"
+    @app.get('/')
+    async def read_results():
+        results = await some_library()
+        return results
+    ```
+
+    /// note
+
+    You can only use `await` inside of functions created with `async def`.
+
+    ///
+    """
 
     grounding_truth = (
         "You can only use `await` inside of functions created with `async def`."
