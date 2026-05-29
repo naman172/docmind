@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
-from docmind_core.chunking import chunk_fixed, chunk_recursive
+from docmind_core.chunking import chunk_fixed, chunk_markdown, chunk_recursive
 from docmind_core.embeddings import embed_texts
 from docmind_core.models import Chunk
 from docmind_core.vector_store import create_collection, search, upsert_chunks
@@ -101,6 +101,9 @@ async def main() -> None:
     chunkers = {
         "chunk_fixed": lambda text, doc_id, source: chunk_fixed(text, doc_id, source),
         "chunk_recursive": lambda text, doc_id, source: chunk_recursive(
+            text, doc_id, source
+        ),
+        "chunk_markdown": lambda text, doc_id, source: chunk_markdown(
             text, doc_id, source
         ),
     }

@@ -74,3 +74,19 @@ multiple sentences.
 - Re-run with chunk_size=256 to test whether smaller chunks improve answer presence
 - Implement chunk_semantic when embedding client is available in benchmark context
 - Run RAGAS faithfulness scores for a more rigorous quality signal
+
+## Benchmark Results (chunk_markdown)
+
+Corpus: FastAPI documentation (152 files)
+Chunk size: 512 characters, overlap: 50, min_new_chars: 25
+Queries: 20 verified questions with grounding_truth substrings
+Embedding model: nomic-embed-text (Ollama, local)
+Top-K: 5
+
+| Chunker         |   Source Match |   Answer Present |   Avg Top Score |
+|-----------------|----------------|------------------|-----------------|
+| chunk_fixed     |             14 |               11 |        0.750845 |
+| chunk_recursive |             15 |                8 |        0.842453 |
+| chunk_markdown  |             14 |                9 |        0.776918 |
+
+Conclusion: structure-aware chunking improves over recursive but doesn't beat fixed-window on this corpus; the fixed window's overlap captures cross-boundary content that section-based splitting misses.
