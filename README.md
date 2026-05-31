@@ -9,7 +9,9 @@
 ---
 
 ## Current State
-Synchronous RAG pipeline: POST /ingest chunks and embeds text into Qdrant, /chat retrieves relevant context and generates answers via Ollama.
+Hybrid RAG pipeline: POST /ingest chunks and embeds text into Qdrant with both dense (nomic-embed-text) and sparse (BM25) vectors. /chat retrieves relevant context via RRF-fused hybrid search and generates answers via Ollama.
+Benchmark: 14/20 answer presence on FastAPI docs corpus (chunk_fixed, hybrid).
+
 ---
 
 ## What it is
