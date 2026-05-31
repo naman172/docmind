@@ -1,4 +1,4 @@
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Iterator
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -24,6 +24,15 @@ def async_client() -> AsyncClient:
     )
 
 
+@pytest.fixture
+def mock_sparse_index() -> Iterator[None]:
+    from docmind_api.main import _sparse_indexes
+
+    _sparse_indexes["test"] = (MagicMock(), {})  # fake bm25, empty vocab
+    yield
+    _sparse_indexes.clear()  # clean up after test
+
+
 @pytest.mark.asyncio
 async def test_health(async_client: AsyncClient) -> None:
     async with async_client as ac:
@@ -33,7 +42,9 @@ async def test_health(async_client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_chat_non_streaming(async_client: AsyncClient) -> None:
+async def test_chat_non_streaming(
+    async_client: AsyncClient, mock_sparse_index: None
+) -> None:
     mock_response = MagicMock()
     mock_response.choices[0].message.content = "hello back"
 
@@ -70,7 +81,9 @@ async def mock_acompletion(
 
 
 @pytest.mark.asyncio
-async def test_chat_streaming(async_client: AsyncClient) -> None:
+async def test_chat_streaming(
+    async_client: AsyncClient, mock_sparse_index: None
+) -> None:
     with (
         patch(
             "docmind_api.main.build_llm_prompt",

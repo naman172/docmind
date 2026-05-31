@@ -35,3 +35,9 @@ improves source attribution even when Answer Present is not highest.
 ## Next Steps
 - Cohere reranking deferred — 14/20 may not justify added latency and cost
 - Integrate hybrid retrieval into /ingest and /chat endpoints
+
+## Known Limitations
+BM25 index is built only from the current ingest request, not the full
+collection. Ingesting documents separately produces a stale vocabulary.
+Fix requires Postgres-backed chunk storage to fetch all existing chunks
+before rebuilding — deferred
