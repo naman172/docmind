@@ -7,7 +7,18 @@ from pathlib import Path
 from docmind_core.chunking import chunk_fixed, chunk_markdown, chunk_recursive
 from docmind_core.embeddings import embed_texts
 from docmind_core.models import Chunk
-from docmind_core.vector_store import create_collection, search, upsert_chunks
+from docmind_core.sparse import (
+    build_sparse_index,
+    chunk_to_sparse_vector,
+    load_sparse_index,
+    save_sparse_index,
+)
+from docmind_core.vector_store import (
+    create_collection,
+    search_hybrid,
+    upsert_chunks,
+)
+from rank_bm25 import BM25Okapi
 from tabulate import tabulate  # type: ignore[import-untyped,unused-ignore]
 
 
@@ -42,27 +53,39 @@ async def upsert_in_batches(
     collection_name: str,
     chunks: list[Chunk],
     embeddings: list[list[float]],
+    bm25: BM25Okapi,
+    vocab: dict[str, int],
     batch_size: int = 100,
 ) -> None:
     for i in range(0, len(chunks), batch_size):
         batch_chunks = chunks[i : i + batch_size]
         batch_embeddings = embeddings[i : i + batch_size]
-        await upsert_chunks(collection_name, batch_chunks, batch_embeddings)
+        await upsert_chunks(
+            collection_name, batch_chunks, batch_embeddings, bm25, vocab
+        )
 
 
 async def index_chunks(
     chunks: list[Chunk], collection_name: str, cache_path: Path
-) -> None:
+) -> tuple[BM25Okapi, dict[str, int]]:
+    sparse_path = cache_path.with_suffix(".pkl")
+
     if cache_path.exists():
-        return
+        return load_sparse_index(sparse_path)
 
     raw_chunks = [chunk.text for chunk in chunks]
     embeddings = await embed_in_batches(raw_chunks)
     cache_path.write_text(json.dumps({"chunks": raw_chunks, "embeddings": embeddings}))
-    print(f"embeddings for {collection_name} succcessfully created")
+
+    bm25, vocab = build_sparse_index(chunks)
+    save_sparse_index(bm25, vocab, sparse_path)
+
+    print(f"embeddings & vocab for {collection_name} succcessfully created")
 
     await create_collection(collection_name)
-    await upsert_in_batches(collection_name, chunks, embeddings)
+    await upsert_in_batches(collection_name, chunks, embeddings, bm25, vocab)
+
+    return (bm25, vocab)
 
 
 async def run_query(
@@ -70,10 +93,15 @@ async def run_query(
     expected_source: str,
     grounding_truth: str,
     collection_name: str,
+    bm25: BM25Okapi,
+    vocab: dict[str, int],
     top_k: int = 5,
 ) -> dict[str, bool | float]:
     query_embedding = (await embed_texts([question]))[0]
-    response = await search(collection_name, query_embedding, top_k)
+    indices, weights = chunk_to_sparse_vector(question, bm25, vocab)
+    response = await search_hybrid(
+        collection_name, query_embedding, indices, weights, top_k
+    )
 
     return {
         "source_match": any(
@@ -113,7 +141,7 @@ async def main() -> None:
 
     for chunker_name, chunker_fn in chunkers.items():
         chunks = build_chunks(corpus, chunker_fn)
-        await index_chunks(
+        bm25, vocab = await index_chunks(
             chunks, chunker_name, cache_dir / f"cache_{chunker_name}_512_50_25.json"
         )
         print(f"upsert for {chunker_name} succcessfully completed")
@@ -126,6 +154,8 @@ async def main() -> None:
                     query["source_file"],
                     query["grounding_truth"],
                     chunker_name,
+                    bm25,
+                    vocab,
                 )
             )
 

@@ -3,8 +3,10 @@ import uuid
 
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient, models
+from rank_bm25 import BM25Okapi
 
 from docmind_core.models import Chunk, QueryResult
+from docmind_core.sparse import chunk_to_sparse_vector
 
 load_dotenv()
 
@@ -21,20 +23,34 @@ async def create_collection(
 
     client.create_collection(
         collection_name=collection_name,
-        vectors_config=models.VectorParams(
-            size=vector_size, distance=models.Distance.COSINE
-        ),
+        vectors_config={
+            "dense": models.VectorParams(
+                size=vector_size, distance=models.Distance.COSINE
+            ),
+        },
+        sparse_vectors_config={"sparse": models.SparseVectorParams()},
     )
 
 
 async def upsert_chunks(
-    collection_name: str, chunks: list[Chunk], embeddings: list[list[float]]
-) -> None:
+    collection_name: str,
+    chunks: list[Chunk],
+    embeddings: list[list[float]],
+    bm25: BM25Okapi,
+    vocab: dict[str, int],
+) -> tuple[BM25Okapi, dict[str, int]]:
     # TODO: validate embedding_model matches collection before insert
 
-    client.upsert(
-        collection_name=collection_name,
-        points=[
+    points = []
+
+    for chunk, embedding in zip(chunks, embeddings):
+        indices, weights = chunk_to_sparse_vector(chunk.text, bm25, vocab)
+        sparse_vector = models.SparseVector(
+            indices=indices,
+            values=weights,
+        )
+
+        points.append(
             models.PointStruct(
                 id=str(chunk.id),
                 payload={
@@ -44,11 +60,16 @@ async def upsert_chunks(
                     "token_count": chunk.token_count,
                     "source_file": chunk.source_file,
                 },
-                vector=embedding,
+                vector={
+                    "dense": embedding,
+                    "sparse": sparse_vector,
+                },
             )
-            for chunk, embedding in zip(chunks, embeddings)
-        ],
-    )
+        )
+
+    client.upsert(collection_name=collection_name, points=points)
+
+    return (bm25, vocab)
 
 
 async def search(
@@ -57,6 +78,61 @@ async def search(
     api_response = client.query_points(
         collection_name=collection_name,
         query=query_embedding,
+        using="dense",
+        limit=top_k,
+        with_payload=True,
+    )
+
+    response: list[QueryResult] = []
+
+    for point in api_response.points:
+        payload = point.payload
+
+        if payload is None:
+            continue
+
+        response.append(
+            QueryResult(
+                score=point.score,
+                chunk=Chunk(
+                    id=uuid.UUID(str(point.id)),
+                    text=payload["text"],
+                    document_id=payload["document_id"],
+                    chunk_index=payload["chunk_index"],
+                    token_count=payload["token_count"],
+                    source_file=payload.get("source_file"),
+                ),
+            )
+        )
+
+    return response
+
+
+async def search_hybrid(
+    collection_name: str,
+    query_embedding: list[float],
+    indices: list[int],
+    weights: list[float],
+    top_k: int = 10,
+) -> list[QueryResult]:
+    api_response = client.query_points(
+        collection_name=collection_name,
+        prefetch=[
+            models.Prefetch(
+                query=query_embedding,
+                using="dense",
+                limit=top_k,
+            ),
+            models.Prefetch(
+                query=models.SparseVector(
+                    indices=indices,
+                    values=weights,
+                ),
+                using="sparse",
+                limit=top_k,
+            ),
+        ],
+        query=models.FusionQuery(fusion=models.Fusion.RRF),
         limit=top_k,
         with_payload=True,
     )
