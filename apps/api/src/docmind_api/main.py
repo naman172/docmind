@@ -1,3 +1,4 @@
+import json
 import time
 import uuid
 from collections.abc import AsyncGenerator
@@ -17,6 +18,8 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 from rank_bm25 import BM25Okapi
 
+from docmind_api.models import LlmPromptContext
+
 _sparse_indexes: dict[str, tuple[BM25Okapi, dict[str, int]]] = {}
 
 app = FastAPI()
@@ -27,7 +30,7 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-async def build_llm_prompt(request: ChatRequest) -> str:
+async def build_llm_prompt(request: ChatRequest) -> LlmPromptContext:
     query = request.messages[-1]
     embedding = await embed_texts([query.content])
     bm25, vocab = _sparse_indexes[request.collection_name]
@@ -36,17 +39,27 @@ async def build_llm_prompt(request: ChatRequest) -> str:
         request.collection_name, embedding[0], indices, weights
     )
     context_chunks = [point.chunk.text for point in context_points]
-    return build_rag_prompt(context_chunks)
+    return {
+        "prompt": build_rag_prompt(context_chunks),
+        "chunks": [point.chunk for point in context_points],
+    }
 
 
 async def stream_chat(request: ChatRequest) -> AsyncGenerator[str, None]:
     query = request.messages[-1]
-    prompt = await build_llm_prompt(request)
+    promptContext = await build_llm_prompt(request)
+
+    yield (
+        f"event: retrieved_chunks\n"
+        f"data: {
+            json.dumps([c.model_dump_json() for c in promptContext['chunks']])
+        }\n\n"
+    )
 
     response = await litellm.acompletion(
         model="ollama/llama3.2",
         messages=[
-            {"role": "system", "content": prompt},
+            {"role": "system", "content": promptContext["prompt"]},
             {"role": "user", "content": query.content},
         ],
         stream=True,
@@ -55,7 +68,9 @@ async def stream_chat(request: ChatRequest) -> AsyncGenerator[str, None]:
     async for chunk in response:
         content = chunk.choices[0].delta.content
         if content:
-            yield f"data: {content}\n\n"
+            yield (f"event: response\ndata: {content}\n\n")
+
+    yield "event: done\ndata: {}\n\n"
 
 
 # returns StreamingResponse or JSONResponse depending on request.stream
@@ -70,18 +85,25 @@ async def chat(request: ChatRequest) -> Response:
         return StreamingResponse(stream_chat(request), media_type="text/event-stream")
 
     query = request.messages[-1]
-    prompt = await build_llm_prompt(request)
+    promptContext = await build_llm_prompt(request)
 
     response = await litellm.acompletion(
         model="ollama/llama3.2",
         messages=[
-            {"role": "system", "content": prompt},
+            {"role": "system", "content": promptContext["prompt"]},
             {"role": "user", "content": query.content},
         ],
     )
 
     content = response.choices[0].message.content
-    return JSONResponse({"response": content})
+    return JSONResponse(
+        {
+            "response": content,
+            "retrieved_chunks": [
+                chunk.model_dump_json() for chunk in promptContext["chunks"]
+            ],
+        }
+    )
 
 
 async def embed_in_batches(texts: list[str], batch_size: int = 32) -> list[list[float]]:

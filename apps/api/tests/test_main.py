@@ -1,9 +1,11 @@
+import uuid
 from collections.abc import AsyncGenerator, Iterator
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from docmind_api.main import app
+from docmind_core.models import Chunk
 from httpx import ASGITransport, AsyncClient
 
 
@@ -52,7 +54,17 @@ async def test_chat_non_streaming(
         patch(
             "docmind_api.main.build_llm_prompt",
             new_callable=AsyncMock,
-            return_value="mock prompt",
+            return_value={
+                "prompt": "mock prompt",
+                "chunks": [
+                    Chunk(
+                        document_id=uuid.uuid4(),
+                        source_file="test",
+                        text="mock prompt",
+                        chunk_index=0,
+                    )
+                ],
+            },
         ),
         patch(
             "docmind_api.main.litellm.acompletion",
@@ -65,7 +77,8 @@ async def test_chat_non_streaming(
             response = await ac.post("/chat", json=request)
 
     assert response.status_code == 200
-    assert response.json() == {"response": "hello back"}
+    assert response.json()["response"] == "hello back"
+    assert len(response.json()["retrieved_chunks"]) == 1
 
 
 async def fake_stream(*args: Any, **kwargs: Any) -> AsyncGenerator[MagicMock, None]:
@@ -88,7 +101,17 @@ async def test_chat_streaming(
         patch(
             "docmind_api.main.build_llm_prompt",
             new_callable=AsyncMock,
-            return_value="mock prompt",
+            return_value={
+                "prompt": "mock prompt",
+                "chunks": [
+                    Chunk(
+                        document_id=uuid.uuid4(),
+                        source_file="test",
+                        text="mock prompt",
+                        chunk_index=0,
+                    )
+                ],
+            },
         ),
         patch(
             "docmind_api.main.litellm.acompletion",
@@ -102,6 +125,11 @@ async def test_chat_streaming(
     assert response.status_code == 200
     assert "text/event-stream" in response.headers["content-type"]
     assert "hello back" in response.text
+
+    assert "event: retrieved_chunks" in response.text
+    assert "event: response" in response.text
+    assert "hello back" in response.text
+    assert "event: done" in response.text
 
 
 @pytest.mark.asyncio
