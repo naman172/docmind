@@ -9,8 +9,10 @@
 ---
 
 ## Current State
-Hybrid RAG pipeline: POST /ingest chunks and embeds text into Qdrant with both dense (nomic-embed-text) and sparse (BM25) vectors. /chat retrieves relevant context via RRF-fused hybrid search and generates answers via Ollama.
-Benchmark: 14/20 answer presence on FastAPI docs corpus (chunk_fixed, hybrid).
+Synchronous RAG pipeline with hybrid retrieval (BM25 sparse + dense vectors, RRF fusion).
+Supports document ingestion and query answering via streaming and non-streaming endpoints.
+RAGAS faithfulness baseline: 0.8778 (partial run — Groq free tier rate limit).
+Known limitation: BM25 index is in-memory, rebuilt from pickle on startup — stale if documents are ingested separately.
 
 ---
 
@@ -28,7 +30,7 @@ It is not a prototype. It runs on Kubernetes, processes documents asynchronously
 |---|---|
 | P95 end-to-end query latency | TBD |
 | P95 retrieval latency | TBD |
-| RAGAS faithfulness (eval set) | TBD |
+| RAGAS faithfulness (eval set) | 0.8778 (partial — 9/20 samples, Groq rate limit) |
 | RAGAS answer relevancy (eval set) | TBD |
 | Ingestion throughput | TBD docs/min |
 | Cost per query | TBD |

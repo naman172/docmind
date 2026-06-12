@@ -38,7 +38,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     collection_name: str
-    tenant_id: str
+    tenant_id: str = "default"
     messages: list[ChatMessage]
     stream: bool
 

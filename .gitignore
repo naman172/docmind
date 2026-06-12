@@ -11,3 +11,7 @@ wheels/
 
 # Environment Variables
 .env
+
+# Cache
+data/
+qdrant_storage/

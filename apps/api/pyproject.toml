@@ -6,6 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
     "docmind-core",
     "fastapi>=0.136.1",
+    "langsmith>=0.8.9",
     "litellm>=1.85.0",
     "uvicorn>=0.47.0",
 ]
