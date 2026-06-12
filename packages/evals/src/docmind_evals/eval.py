@@ -8,6 +8,7 @@ from langchain_groq import ChatGroq
 from langchain_ollama import OllamaEmbeddings
 from ragas import (
     EvaluationDataset,
+    MultiTurnSample,
     RunConfig,
     SingleTurnSample,
     evaluate,
@@ -37,7 +38,7 @@ async def main() -> None:
     data_path = Path(__file__).parent.parent.parent / "data" / "fastapi_eval.json"
     questions = json.loads(data_path.read_text())
 
-    dataset: list[SingleTurnSample] = []
+    dataset: list[SingleTurnSample | MultiTurnSample] = []
 
     async with httpx.AsyncClient(
         base_url="http://localhost:8000", timeout=60.0
