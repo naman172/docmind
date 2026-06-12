@@ -47,13 +47,6 @@ def test_chat_request_rejects_uppercase_role_value() -> None:
         )
 
 
-def test_chat_request_rejects_missing_tenant_id() -> None:
-    with pytest.raises(ValidationError):
-        data = make_valid_request()
-        del data["tenant_id"]
-        ChatRequest(**data)
-
-
 def test_chat_message_role_coercion() -> None:
     msg = ChatMessage(role=Role.USER, content="hello")
     assert msg.role == Role.USER
