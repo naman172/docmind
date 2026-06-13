@@ -4,10 +4,14 @@ version = "0.1.0"
 description = "FastAPI service"
 requires-python = ">=3.12"
 dependencies = [
+    "asyncpg>=0.31.0",
+    "bcrypt>=5.0.0",
     "docmind-core",
     "fastapi>=0.136.1",
     "langsmith>=0.8.9",
     "litellm>=1.85.0",
+    "passlib>=1.7.4",
+    "pyjwt>=2.13.0",
     "uvicorn>=0.47.0",
 ]
 

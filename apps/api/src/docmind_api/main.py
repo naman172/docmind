@@ -27,6 +27,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from langsmith import traceable
 from rank_bm25 import BM25Okapi
 
+from docmind_api.db import close_pool, get_pool, init_pool
 from docmind_api.models import LlmPromptContext
 
 _sparse_indexes: dict[str, tuple[BM25Okapi, dict[str, int]]] = {}
@@ -40,7 +41,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     print("starting up")
     for file in Path(SPARSE_INDEX_DIR).rglob("*.pkl"):
         _sparse_indexes[file.stem] = load_sparse_index(file.absolute())
+    await init_pool()
     yield
+    await close_pool()
     print("shutting down")
 
 
@@ -49,7 +52,9 @@ app = FastAPI(lifespan=lifespan)
 
 @app.get("/health")
 async def health() -> dict[str, str]:
-    return {"status": "ok"}
+    pool = get_pool()
+    await pool.fetchval("SELECT 1")
+    return {"status": "ok", "db": "ok"}
 
 
 async def build_llm_prompt(request: ChatRequest) -> LlmPromptContext:
