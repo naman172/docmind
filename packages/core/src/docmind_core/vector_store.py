@@ -1,5 +1,6 @@
 import os
 import uuid
+from typing import Any
 
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient, models
@@ -12,6 +13,9 @@ load_dotenv()
 
 QDRANT_BASE_URL = os.environ.get("QDRANT_BASE_URL", "http://localhost:6333")
 MODEL_VECTOR_DIMENSION = int(os.environ.get("MODEL_VECTOR_DIMENSION", 768))
+
+# Using synchronous QdrantClient — blocks the event loop on each call.
+# Switch to AsyncQdrantClient for production async I/O
 client = QdrantClient(url=QDRANT_BASE_URL)
 
 
@@ -154,9 +158,47 @@ async def search_hybrid(
                     document_id=payload["document_id"],
                     chunk_index=payload["chunk_index"],
                     token_count=payload["token_count"],
-                    source_file=payload.get("source_file"),
+                    source_file=payload["source_file"],
                 ),
             )
         )
 
     return response
+
+
+async def scroll_chunks(collection_name: str) -> list[Chunk]:
+    chunks: list[Chunk] = []
+    offset: Any = None
+
+    while True:
+        points, next_offset = client.scroll(
+            collection_name=collection_name,
+            offset=offset,
+            limit=256,
+            with_payload=True,
+            with_vectors=False,
+        )
+
+        for point in points:
+            payload = point.payload
+
+            if payload is None:
+                continue
+
+            chunks.append(
+                Chunk(
+                    id=uuid.UUID(str(point.id)),
+                    text=payload["text"],
+                    document_id=payload["document_id"],
+                    chunk_index=payload["chunk_index"],
+                    token_count=payload["token_count"],
+                    source_file=payload["source_file"],
+                )
+            )
+
+        if next_offset is None:
+            break
+
+        offset = next_offset
+
+    return chunks
