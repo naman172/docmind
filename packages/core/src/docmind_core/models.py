@@ -37,8 +37,6 @@ class ChatMessage(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    collection_name: str
-    tenant_id: str = "default"
     messages: list[ChatMessage]
     stream: bool
 
@@ -58,7 +56,6 @@ class ChatResponse(BaseModel):
 # direct text ingestion for development/testing
 class SyncIngestRequest(BaseModel):
     text: str
-    collection_name: str
 
 
 # async worker message triggered by Kafka

@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import time
 import uuid
 from collections.abc import AsyncGenerator
@@ -22,13 +23,25 @@ from docmind_core.vector_store import (
     upsert_chunks,
 )
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import Depends, FastAPI, HTTPException, Response, status
 from fastapi.responses import JSONResponse, StreamingResponse
 from langsmith import traceable
 from rank_bm25 import BM25Okapi
 
-from docmind_api.db import close_pool, get_pool, init_pool
-from docmind_api.models import LlmPromptContext
+from docmind_api.auth import (
+    create_access_token,
+    get_current_tenant,
+    hash_password,
+    verify_password,
+)
+from docmind_api.db import (
+    close_pool,
+    create_tenant,
+    get_pool,
+    get_tenant_by_slug,
+    init_pool,
+)
+from docmind_api.models import LlmPromptContext, LoginRequest, RegisterRequest, Tenant
 
 _sparse_indexes: dict[str, tuple[BM25Okapi, dict[str, int]]] = {}
 
@@ -57,13 +70,15 @@ async def health() -> dict[str, str]:
     return {"status": "ok", "db": "ok"}
 
 
-async def build_llm_prompt(request: ChatRequest) -> LlmPromptContext:
+async def build_llm_prompt(
+    request: ChatRequest, collection_name: str
+) -> LlmPromptContext:
     query = request.messages[-1]
     embedding = await embed_texts([query.content])
-    bm25, vocab = _sparse_indexes[request.collection_name]
+    bm25, vocab = _sparse_indexes[collection_name]
     indices, weights = chunk_to_sparse_vector(query.content, bm25, vocab)
     context_points = await search_hybrid(
-        request.collection_name, embedding[0], indices, weights
+        collection_name, embedding[0], indices, weights
     )
     context_chunks = [point.chunk.text for point in context_points]
     return {
@@ -72,9 +87,11 @@ async def build_llm_prompt(request: ChatRequest) -> LlmPromptContext:
     }
 
 
-async def stream_chat(request: ChatRequest) -> AsyncGenerator[str, None]:
+async def stream_chat(
+    request: ChatRequest, collection_name: str
+) -> AsyncGenerator[str, None]:
     query = request.messages[-1]
-    promptContext = await build_llm_prompt(request)
+    promptContext = await build_llm_prompt(request, collection_name)
 
     yield (
         f"event: retrieved_chunks\n"
@@ -114,9 +131,9 @@ async def generate_response(prompt: str, query: str) -> str:
     return content
 
 
-async def non_stream_chat(request: ChatRequest) -> JSONResponse:
+async def non_stream_chat(request: ChatRequest, collection_name: str) -> JSONResponse:
     query = request.messages[-1]
-    promptContext = await build_llm_prompt(request)
+    promptContext = await build_llm_prompt(request, collection_name)
 
     content = await generate_response(promptContext["prompt"], query.content)
 
@@ -132,16 +149,21 @@ async def non_stream_chat(request: ChatRequest) -> JSONResponse:
 
 # returns StreamingResponse or JSONResponse depending on request.stream
 @app.post("/chat", response_model=None)
-async def chat(request: ChatRequest) -> Response:
-    if request.collection_name not in _sparse_indexes:
+async def chat(
+    request: ChatRequest, tenant: Tenant = Depends(get_current_tenant)
+) -> Response:
+    collection_name = tenant.slug
+    if collection_name not in _sparse_indexes:
         raise HTTPException(
             status_code=400, detail="Collection not found. Ingest documents first."
         )
 
     if request.stream:
-        return StreamingResponse(stream_chat(request), media_type="text/event-stream")
+        return StreamingResponse(
+            stream_chat(request, collection_name), media_type="text/event-stream"
+        )
 
-    return await non_stream_chat(request)
+    return await non_stream_chat(request, collection_name)
 
 
 async def embed_in_batches(texts: list[str], batch_size: int = 32) -> list[list[float]]:
@@ -153,13 +175,21 @@ async def embed_in_batches(texts: list[str], batch_size: int = 32) -> list[list[
 
 
 @app.post("/ingest")
-async def ingest(request: SyncIngestRequest) -> dict[str, str]:
+async def ingest(
+    request: SyncIngestRequest, tenant: Tenant = Depends(get_current_tenant)
+) -> dict[str, str]:
     text = request.text
-    collection_name = request.collection_name
+    collection_name = tenant.slug
 
     start_time = time.perf_counter()
     doc_id = uuid.uuid4()
     chunks = chunk_fixed(text, doc_id, "user_input")
+    if not chunks:
+        raise HTTPException(
+            status_code=400,
+            detail="Text too short to index. Please provide more content.",
+        )
+
     embeddings = await embed_in_batches([chunk.text for chunk in chunks])
 
     # BM25 index is built only from the current ingest request, not the full collection.
@@ -173,3 +203,34 @@ async def ingest(request: SyncIngestRequest) -> dict[str, str]:
     latency_in_ms = (end_time - start_time) * 1000
 
     return {"chunks_indexed": str(len(chunks)), "latency_ms": str(latency_in_ms)}
+
+
+@app.post("/auth/register", status_code=status.HTTP_201_CREATED)
+async def register(registerRequest: RegisterRequest) -> dict[str, str]:
+    name = registerRequest.name.lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", name)
+    hashed_password = hash_password(registerRequest.password)
+
+    try:
+        await create_tenant(name, slug, hashed_password)
+    except ValueError:
+        raise HTTPException(
+            409, "This name is already registered please use a different name"
+        )
+
+    return {"message": "Created", "data": slug}
+
+
+@app.post("/auth/token", status_code=status.HTTP_200_OK)
+async def login(loginRequest: LoginRequest) -> dict[str, str]:
+    result = await get_tenant_by_slug(loginRequest.username)
+    if result is None:
+        raise HTTPException(401, "Invalid credentials")
+
+    tenant, hashed_password = result
+
+    if not verify_password(loginRequest.password, hashed_password):
+        raise HTTPException(401, "Invalid credentials")
+
+    token = create_access_token(tenant.id)
+    return {"message": "Success", "data": token}

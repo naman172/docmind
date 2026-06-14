@@ -18,7 +18,6 @@ def make_valid_request(**overrides: Any) -> dict[str, Any]:
 
 def test_chat_request_valid_construction() -> None:
     request = ChatRequest(**make_valid_request())
-    assert request.tenant_id == "tenant-123"
     assert request.stream is False
     assert len(request.messages) == 1
 
