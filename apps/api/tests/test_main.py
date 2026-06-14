@@ -5,10 +5,15 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from docmind_api.auth import get_current_tenant
 from docmind_api.main import app
 from docmind_api.models import Tenant
 from docmind_core.models import Chunk
 from httpx import ASGITransport, AsyncClient
+
+fake_tenant = Tenant(
+    id=uuid.uuid4(), name="test", slug="test", created_at=datetime.now()
+)
 
 
 def make_chat_payload(**overrides: Any) -> dict[str, Any]:
@@ -21,15 +26,17 @@ def make_chat_payload(**overrides: Any) -> dict[str, Any]:
 
 @pytest.fixture
 async def async_client() -> AsyncGenerator[AsyncClient, None]:
+    app.dependency_overrides[get_current_tenant] = lambda: fake_tenant
     with (
         patch("docmind_api.main.init_pool", new_callable=AsyncMock),
         patch("docmind_api.main.close_pool", new_callable=AsyncMock),
-        patch("docmind_api.main.get_pool"),
+        patch("docmind_api.main.get_pool", return_value=AsyncMock()),
     ):
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url="http://localhost:8000"
         ) as ac:
             yield ac
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -74,12 +81,6 @@ async def test_chat_non_streaming(
             "docmind_api.main.litellm.acompletion",
             new_callable=AsyncMock,
             return_value=mock_response,
-        ),
-        patch(
-            "docmind_api.main.get_current_tenant",
-            return_value=Tenant(
-                id=uuid.uuid4(), name="test", slug="test", created_at=datetime.now()
-            ),
         ),
     ):
         request = make_chat_payload()
@@ -126,13 +127,6 @@ async def test_chat_streaming(
             "docmind_api.main.litellm.acompletion",
             new=AsyncMock(side_effect=mock_acompletion),
         ),
-        patch(
-            "docmind_api.main.get_current_tenant",
-            new_callable=AsyncMock,
-            return_value=Tenant(
-                id=uuid.uuid4(), name="test", slug="test", created_at=datetime.now()
-            ),
-        ),
     ):
         request = make_chat_payload(stream=True)
         response = await async_client.post("/chat", json=request)
@@ -149,14 +143,8 @@ async def test_chat_streaming(
 
 @pytest.mark.asyncio
 async def test_chat_missing_messages_returns_422(async_client: AsyncClient) -> None:
-    with patch(
-        "docmind_api.main.get_current_tenant",
-        return_value=Tenant(
-            id=uuid.uuid4(), name="test", slug="test", created_at=datetime.now()
-        ),
-    ):
-        response = await async_client.post(
-            "/chat", json={"tenant_id": "tenant-123", "stream": False}
-        )
+    response = await async_client.post(
+        "/chat", json={"tenant_id": "tenant-123", "stream": False}
+    )
 
     assert response.status_code == 422
