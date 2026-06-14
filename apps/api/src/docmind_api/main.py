@@ -19,6 +19,7 @@ from docmind_core.sparse import (
 )
 from docmind_core.vector_store import (
     create_collection,
+    scroll_chunks,
     search_hybrid,
     upsert_chunks,
 )
@@ -192,8 +193,8 @@ async def ingest(
 
     embeddings = await embed_in_batches([chunk.text for chunk in chunks])
 
-    # BM25 index is built only from the current ingest request, not the full collection.
-    bm25, vocab = build_sparse_index(chunks)
+    all_chunks = await scroll_chunks(collection_name)
+    bm25, vocab = build_sparse_index(all_chunks + chunks)
     _sparse_indexes[collection_name] = (bm25, vocab)
 
     await create_collection(collection_name)
