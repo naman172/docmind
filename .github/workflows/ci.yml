@@ -1,5 +1,9 @@
 name: CI
 
+env:
+  SECRET_KEY: "test-secret-key-for-ci"
+  DATABASE_URL: "postgresql://admin:password@localhost:5432/tenants"
+
 on:
   push:
     branches: [main]
@@ -9,6 +13,20 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: tenants
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
@@ -22,5 +40,7 @@ jobs:
         run: uv run ruff format --check .
       - name: Typecheck
         run: uv run mypy .
+      - name: Run migrations
+        run: psql postgresql://admin:password@localhost:5432/tenants -f migrations/001_tenants.sql
       - name: Test
         run: uv run pytest
